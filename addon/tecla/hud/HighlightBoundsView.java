@@ -15,7 +15,7 @@
  */
 
 // package com.google.android.marvin.utils;
-package ca.idrc.tecla.highlighter;
+package com.android.tecla.hud;
 
 import android.content.Context;
 import android.graphics.Canvas;

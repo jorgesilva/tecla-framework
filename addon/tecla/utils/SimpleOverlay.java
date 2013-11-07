@@ -15,7 +15,7 @@
  */
 
 // package com.googlecode.eyesfree.widget;
-package ca.idrc.tecla.framework;
+package com.android.tecla.utils;
 
 import android.content.Context;
 import android.graphics.PixelFormat;

@@ -6,6 +6,8 @@ import java.util.Queue;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.android.tecla.ServiceSwitchEventProvider.SwitchEventProviderBinder;
+import com.android.tecla.hud.OverlayHUD;
+import com.android.tecla.hud.OverlayHighlighter;
 
 import ca.idi.tecla.sdk.SwitchEvent;
 import ca.idi.tecla.sdk.SEPManager;

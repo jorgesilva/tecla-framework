@@ -1,9 +1,9 @@
 package com.android.tecla;
 
 import com.android.tecla.ManagerShield.OnConnectionAttemptListener;
+import com.android.tecla.utils.Persistence;
 
 import ca.idrc.tecla.R;
-import ca.idrc.tecla.framework.Persistence;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;

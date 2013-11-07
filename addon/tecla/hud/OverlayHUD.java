@@ -1,10 +1,8 @@
-package com.android.tecla;
+package com.android.tecla.hud;
 
 import java.util.ArrayList;
 
 import ca.idrc.tecla.R;
-import ca.idrc.tecla.framework.SimpleOverlay;
-import ca.idrc.tecla.hud.TeclaHUDButtonView;
 
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
@@ -21,6 +19,7 @@ import android.view.WindowManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import com.android.tecla.TeclaApp;
+import com.android.tecla.utils.SimpleOverlay;
 
 public class OverlayHUD extends SimpleOverlay {
 
@@ -170,7 +169,7 @@ public class OverlayHUD extends SimpleOverlay {
 		mHUDPad.get(HUD_BTN_BOTTOMRIGHT).setHighlighted(true);		
 	}
 	
-	protected void scanPrevious() {
+	public void scanPrevious() {
 
 		// Move highlight out of previous button
 		if (mHUDAnimators.get(mScanIndex).isRunning()) {
@@ -197,7 +196,7 @@ public class OverlayHUD extends SimpleOverlay {
 		mHUDPad.get(mScanIndex).setAlpha(1.0f);
 	}
 
-	protected void scanNext() {
+	public void scanNext() {
 
 		// Move highlight out of previous button
 		if (mHUDAnimators.get(mScanIndex).isRunning()) {

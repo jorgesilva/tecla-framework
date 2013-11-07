@@ -1,4 +1,4 @@
-package ca.idrc.tecla.framework;
+package com.android.tecla.utils;
 
 import java.util.HashMap;
 

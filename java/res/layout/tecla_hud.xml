@@ -11,21 +11,21 @@
         android:layout_height="fill_parent"
         android:orientation="vertical" >
 
-        <ca.idrc.tecla.hud.TeclaHUDButtonView
+        <com.android.tecla.hud.TeclaHUDButtonView
             android:id="@+id/hud_btn_topleft"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:scaleType="fitCenter"
             android:src="@drawable/hud_icon_notification_normal" />
 
-        <ca.idrc.tecla.hud.TeclaHUDButtonView
+        <com.android.tecla.hud.TeclaHUDButtonView
             android:id="@+id/hud_btn_left"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:scaleType="fitCenter"
             android:src="@drawable/hud_icon_left_normal" />
 
-        <ca.idrc.tecla.hud.TeclaHUDButtonView
+        <com.android.tecla.hud.TeclaHUDButtonView
             android:id="@+id/hud_btn_bottomleft"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -42,7 +42,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" >
 
-            <ca.idrc.tecla.hud.TeclaHUDButtonView
+            <com.android.tecla.hud.TeclaHUDButtonView
                 android:id="@+id/hud_btn_top"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -50,7 +50,7 @@
                 android:scaleType="fitCenter"
                 android:src="@drawable/hud_icon_up_normal" />
 
-            <ca.idrc.tecla.hud.TeclaHUDButtonView
+            <com.android.tecla.hud.TeclaHUDButtonView
                 android:id="@+id/hud_btn_bottom"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -67,21 +67,21 @@
         android:gravity="right"
         android:orientation="vertical" >
 
-        <ca.idrc.tecla.hud.TeclaHUDButtonView
+        <com.android.tecla.hud.TeclaHUDButtonView
             android:id="@+id/hud_btn_topright"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:scaleType="fitCenter"
             android:src="@drawable/hud_icon_select_normal" />
 
-        <ca.idrc.tecla.hud.TeclaHUDButtonView
+        <com.android.tecla.hud.TeclaHUDButtonView
             android:id="@+id/hud_btn_right"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:scaleType="fitCenter"
             android:src="@drawable/hud_icon_right_normal" />
 
-        <ca.idrc.tecla.hud.TeclaHUDButtonView
+        <com.android.tecla.hud.TeclaHUDButtonView
             android:id="@+id/hud_btn_bottomright"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

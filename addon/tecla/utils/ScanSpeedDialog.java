@@ -2,7 +2,8 @@
  * Copyright (C) 2010-2013, Inclusive Design Research Centre
  */
 
-package ca.idrc.tecla.framework;
+package com.android.tecla.utils;
+
 
 import ca.idrc.tecla.R;
 import android.app.Dialog;

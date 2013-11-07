@@ -1,7 +1,8 @@
 package com.android.tecla;
 
+import com.android.tecla.utils.ScanSpeedDialog;
+
 import ca.idrc.tecla.R;
-import ca.idrc.tecla.framework.ScanSpeedDialog;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.ProgressDialog;

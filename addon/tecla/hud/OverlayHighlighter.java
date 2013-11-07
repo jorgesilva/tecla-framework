@@ -1,8 +1,9 @@
-package com.android.tecla;
+package com.android.tecla.hud;
+
+import com.android.tecla.TeclaStatic;
+import com.android.tecla.utils.SimpleOverlay;
 
 import ca.idrc.tecla.R;
-import ca.idrc.tecla.framework.SimpleOverlay;
-import ca.idrc.tecla.highlighter.HighlightBoundsView;
 import android.content.Context;
 import android.graphics.Color;
 import android.view.WindowManager;
