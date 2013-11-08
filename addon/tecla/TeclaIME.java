@@ -5,6 +5,7 @@ import ca.idi.tecla.sdk.SwitchEvent;
 import com.android.inputmethod.keyboard.KeyboardSwitcher;
 import android.content.Intent;
 import com.android.inputmethod.keyboard.KeyboardView;
+import com.android.tecla.utils.TeclaStatic;
 
 import android.inputmethodservice.InputMethodService;
 import android.os.Handler;

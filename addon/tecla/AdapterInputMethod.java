@@ -8,6 +8,7 @@ import com.android.inputmethod.keyboard.Key;
 import com.android.inputmethod.keyboard.Keyboard;
 import com.android.inputmethod.keyboard.KeyboardView;
 import com.android.inputmethod.latin.LatinIME;
+import com.android.tecla.hud.ManagerAutoScan;
 
 import android.os.Handler;
 import android.os.Message;

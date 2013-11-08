@@ -1,4 +1,7 @@
-package com.android.tecla;
+package com.android.tecla.hud;
+
+import com.android.tecla.AdapterInputMethod;
+import com.android.tecla.TeclaApp;
 
 import android.os.Handler;
 import android.os.Message;

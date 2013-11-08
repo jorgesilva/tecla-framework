@@ -1,6 +1,7 @@
 package com.android.tecla;
 
 import com.android.tecla.ServiceShield.ShieldServiceBinder;
+import com.android.tecla.utils.TeclaStatic;
 
 import android.content.ComponentName;
 import android.content.Context;

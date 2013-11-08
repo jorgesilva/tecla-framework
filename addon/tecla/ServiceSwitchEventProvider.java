@@ -3,6 +3,8 @@ package com.android.tecla;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import com.android.tecla.utils.TeclaStatic;
+
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;

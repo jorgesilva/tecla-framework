@@ -1,6 +1,7 @@
 package com.android.tecla;
 
 import com.android.tecla.utils.SimpleOverlay;
+import com.android.tecla.utils.TeclaStatic;
 
 import ca.idrc.tecla.R;
 import android.content.Context;

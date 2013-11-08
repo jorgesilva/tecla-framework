@@ -3,6 +3,7 @@ package com.android.tecla;
 
 import com.android.inputmethod.latin.LatinIME;
 import com.android.tecla.utils.Persistence;
+import com.android.tecla.utils.TeclaStatic;
 
 import ca.idrc.tecla.R;
 
@@ -65,14 +66,12 @@ public class TeclaApp extends Application {
 	 */
 	@Override
 	public void onCreate() {
-		// TODO Auto-generated method stub
-		super.onCreate();
-		
-		init(getApplicationContext());
+		TeclaStatic.logD(CLASS_TAG, "TECLA NEXT STARTING ON " + Build.MODEL + " BY " + Build.MANUFACTURER);
+		//init(getApplicationContext());
+		super.onCreate();		
 	}
 	
 	private void init(Context context) {
-		TeclaStatic.logD(CLASS_TAG, "TECLA NEXT STARTING ON " + Build.MODEL + " BY " + Build.MANUFACTURER);
 
 		sInstance = this;
 		persistence = new Persistence(this);

@@ -1,6 +1,7 @@
 package com.android.tecla;
 
 import com.android.tecla.utils.ScanSpeedDialog;
+import com.android.tecla.utils.TeclaStatic;
 
 import ca.idrc.tecla.R;
 import android.app.Activity;

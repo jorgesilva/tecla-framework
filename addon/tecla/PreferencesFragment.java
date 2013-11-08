@@ -1,7 +1,9 @@
 package com.android.tecla;
 
 import com.android.tecla.ManagerShield.OnConnectionAttemptListener;
+import com.android.tecla.hud.ManagerAutoScan;
 import com.android.tecla.utils.Persistence;
+import com.android.tecla.utils.TeclaStatic;
 
 import ca.idrc.tecla.R;
 import android.app.ProgressDialog;

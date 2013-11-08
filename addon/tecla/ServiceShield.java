@@ -7,6 +7,8 @@ import java.io.OutputStream;
 //import java.lang.reflect.Method;
 import java.util.UUID;
 
+import com.android.tecla.utils.TeclaStatic;
+
 import ca.idi.tecla.sdk.SwitchEvent;
 import ca.idrc.tecla.R;
 

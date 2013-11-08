@@ -1,13 +1,17 @@
 package com.android.tecla;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.android.tecla.ServiceSwitchEventProvider.SwitchEventProviderBinder;
+import com.android.tecla.hud.ManagerAutoScan;
 import com.android.tecla.hud.OverlayHUD;
 import com.android.tecla.hud.OverlayHighlighter;
+import com.android.tecla.utils.TeclaStatic;
 
 import ca.idi.tecla.sdk.SwitchEvent;
 import ca.idi.tecla.sdk.SEPManager;
@@ -23,6 +27,7 @@ import android.content.ServiceConnection;
 import android.graphics.Rect;
 import android.os.Binder;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -31,7 +36,8 @@ import android.view.accessibility.AccessibilityNodeInfo;
 
 public class ServiceAccessibility extends AccessibilityService {
 
-	private final static String CLASS_TAG = "TeclaA11yService";
+	private final static String CLASS_TAG = "TeclaAccessibilityService";
+	private final static int DEBUG_SCAN_DELAY = 1000;
 
 	private final static String EDITTEXT_CLASSNAME = "android.widget.EditText";
 	
@@ -45,11 +51,16 @@ public class ServiceAccessibility extends AccessibilityService {
 
 	private Boolean register_receiver_called;
 
+	private ArrayList<AccessibilityNodeInfo> mActiveLeafs;
+	private AccessibilityNodeInfo mCurrentLeaf;
+	private int mLeafIndex;
+
+	private Handler mHandler;
+	
+	private AccessibilityNodeInfo mLastNode;
+	
 	private AccessibilityNodeInfo mOriginalNode, mPreviousOriginalNode;
 	protected AccessibilityNodeInfo mSelectedNode;
-
-	private ArrayList<AccessibilityNodeInfo> mActiveNodes;
-	private int mNodeIndex;
 
 	private OverlayHUD mHUD;
 	private OverlayHighlighter mHighlighter;
@@ -79,34 +90,229 @@ public class ServiceAccessibility extends AccessibilityService {
 	private void init() {
 		sInstance = this;
 		register_receiver_called = false;
+		
+		mDebugScanHandler = new Handler();
+		mHandler = new Handler();
 
-		mActiveNodes = new ArrayList<AccessibilityNodeInfo>();
-		mActionLock = new ReentrantLock();
+		mActiveLeafs = new ArrayList<AccessibilityNodeInfo>();
+		//mActionLock = new ReentrantLock();
 
 		mHighlighter = new OverlayHighlighter(this);
-		mHUD = new OverlayHUD(this);
+		//mHUD = new OverlayHUD(this);
 		
-		if (mSwitch == null) {
-			mSwitch = new OverlaySwitch(this);
+		//if (mSwitch == null) {
+			//mSwitch = new OverlaySwitch(this);
 			//TeclaApp.setFullscreenSwitch(mFullscreenSwitch);		
-		}
+		//}
 
 		// Bind to SwitchEventProvider
-		Intent intent = new Intent(this, ServiceSwitchEventProvider.class);
-		bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+		//Intent intent = new Intent(this, ServiceSwitchEventProvider.class);
+		//bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
 
-		registerReceiver(mReceiver, new IntentFilter(SwitchEvent.ACTION_SWITCH_EVENT_RECEIVED));
-		register_receiver_called = true;
+		//registerReceiver(mReceiver, new IntentFilter(SwitchEvent.ACTION_SWITCH_EVENT_RECEIVED));
+		//register_receiver_called = true;
 		
-		SEPManager.start(this);
+		//SEPManager.start(this);
 
-		//mOverlayHighlighter.show();
+		updateActiveLeafs(null);
+		mDebugScanHandler.post(mDebugScanRunnable);
 		//mOverlayHUD.show();
 		//mFullscreenSwitch.show();
 		//mTeclaOverlay.hide();
 		//mFullscreenSwitch.hide();
 		
-		TeclaApp.setA11yserviceInstance(this);
+		//TeclaApp.setA11yserviceInstance(sInstance);
+	}
+	
+	@Override
+	public void onAccessibilityEvent(AccessibilityEvent event) {
+		int event_type = event.getEventType();
+		TeclaStatic.logD(CLASS_TAG, AccessibilityEvent.eventTypeToString(event_type) + ": " + event.getText());
+		AccessibilityNodeInfo node = event.getSource();
+		if (node != null) {
+			switch (event_type) {
+			case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
+			case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
+			case AccessibilityEvent.TYPE_VIEW_FOCUSED:
+			case AccessibilityEvent.TYPE_VIEW_SELECTED:
+			case AccessibilityEvent.TYPE_VIEW_SCROLLED:
+			case AccessibilityEvent.TYPE_VIEW_CLICKED:
+				updateActiveLeafs(node);
+			}
+		}
+		//mHighlighter.setNode(getFirstActiveLeaf(node));
+		//showHighlighter();
+//		if (TeclaApp.getInstance().isSupportedIMERunning()) {
+//			if (isFeedbackVisible()) {
+//				int event_type = event.getEventType();
+//				TeclaStatic.logD(CLASS_TAG, AccessibilityEvent.eventTypeToString(event_type) + ": " + event.getText());
+//
+//				AccessibilityNodeInfo node = event.getSource();
+//				if (node != null) {
+//					if (event_type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+//						mPreviousOriginalNode = mOriginalNode;
+//						mOriginalNode = node;				
+//						mNodeIndex = 0;
+//						searchAndUpdateNodes();
+//					} else if (event_type == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+//						mPreviousOriginalNode = mOriginalNode;
+//						mOriginalNode = node;				
+//						mNodeIndex = 0;
+//						searchAndUpdateNodes();
+//						AccessibilityNodeInfo selectednode = findSelectedNode();
+//						if(selectednode != null && selectednode.getParent().isScrollable()) {
+//							mSelectedNode = selectednode;
+//							mHighlighter.highlightNode(mSelectedNode);
+//						}
+////						mVisualOverlay.checkAndUpdateHUDHeight();
+//					} else if (event_type == AccessibilityEvent.TYPE_VIEW_FOCUSED) {
+//						mSelectedNode = node;
+//						mHighlighter.highlightNode(mSelectedNode);
+//						if(mSelectedNode.getClassName().toString().contains(EDITTEXT_CLASSNAME))
+//								TeclaApp.ime.showWindow(true);
+//					} else if (event_type == AccessibilityEvent.TYPE_VIEW_SELECTED) {
+//						//searchAndUpdateNodes();
+//					} else if(event_type == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+//						mPreviousOriginalNode = mOriginalNode;
+//						mOriginalNode = node;				
+//						mNodeIndex = 0;
+//						searchAndUpdateNodes();
+//					} else if (event_type == AccessibilityEvent.TYPE_VIEW_CLICKED) {
+//						//searchAndUpdateNodes();
+//					}
+//				} else {
+//					mSelectedNode=sInstance.getRootInActiveWindow();
+//					TeclaStatic.logD(CLASS_TAG, "Node is null!");
+//				}
+//			}
+//		}
+	}
+
+	private Runnable mUpdateActiveLeafsRunnable = new Runnable() {
+
+		@Override
+		public void run() {
+			AccessibilityNodeInfo thisnode = mLastNode;
+			ArrayList<AccessibilityNodeInfo> active_leafs = new ArrayList<AccessibilityNodeInfo>();
+			Queue<AccessibilityNodeInfo> q = new LinkedList<AccessibilityNodeInfo>();
+			q.add(thisnode);
+			while (!q.isEmpty()) {
+				thisnode = q.poll();
+				if (isActive(thisnode)) {
+					active_leafs.add(thisnode);
+				}
+				for (int i=0; i<thisnode.getChildCount(); ++i) {
+					AccessibilityNodeInfo n = thisnode.getChild(i);
+					if (n != null) q.add(n); // Don't add if null!
+				}
+			};
+			Collections.sort(active_leafs, new Comparator<AccessibilityNodeInfo>(){
+	
+				@Override
+				public int compare(AccessibilityNodeInfo lhs,
+						AccessibilityNodeInfo rhs) {
+					Rect outBoundsL = new Rect();
+					Rect outBoundsR = new Rect();
+					lhs.getBoundsInScreen(outBoundsL);
+					rhs.getBoundsInScreen(outBoundsR);
+					int swidth = mHighlighter.getRootView().getWidth();
+					int sheight = mHighlighter.getRootView().getHeight();
+					int smax;
+					if (swidth <= sheight) { // Portrait
+						smax = sheight;
+					} else { // Landscape
+						smax = swidth;
+					}
+	
+					if ((outBoundsL.centerX() == outBoundsR.centerX())
+							&& (outBoundsL.centerY() == outBoundsR.centerY())) {
+						return 0;
+					} else {
+						return (smax * (outBoundsL.centerY() - outBoundsR.top)) + (outBoundsL.left - outBoundsR.right);
+					}
+				}
+				
+			});
+			boolean is_same = false;
+			if ((mActiveLeafs.size() == active_leafs.size()) && (mActiveLeafs.size() > 0)) {
+				Rect cBounds = new Rect();
+				Rect nBounds = new Rect();
+				int i = 0;
+				is_same = true;
+				do {
+					mActiveLeafs.get(i).getBoundsInScreen(cBounds);
+					active_leafs.get(i).getBoundsInScreen(nBounds);
+					if (!cBounds.equals(nBounds)) is_same = false;
+					i++;
+				} while (i < mActiveLeafs.size() && is_same);
+			} else {
+				mDebugScanHandler.removeCallbacks(mDebugScanRunnable);
+				hideHighlighter();
+				mLeafIndex = 0;
+			}
+			if (!is_same) {
+				mDebugScanHandler.removeCallbacks(mDebugScanRunnable);
+				mActiveLeafs = active_leafs;
+				mDebugScanHandler.post(mDebugScanRunnable);
+			}
+			TeclaStatic.logD(CLASS_TAG, active_leafs.size() + " leafs in the node!");
+		}
+		
+	};
+	
+	private void updateActiveLeafs(AccessibilityNodeInfo node) {
+		if (node == null) {
+			TeclaStatic.logW(CLASS_TAG, "Node is null, nothing to do!");
+		} else {
+			mHandler.removeCallbacks(mUpdateActiveLeafsRunnable);
+			AccessibilityNodeInfo parent = node.getParent();
+			while (parent != null) {
+				node = parent;
+				parent = node.getParent();
+			}
+			mLastNode = node;
+			mHandler.post(mUpdateActiveLeafsRunnable);				
+		}
+	}
+	
+//	private boolean hasActiveDescendants(AccessibilityNodeInfo node) {
+//		boolean has_active_descendants = false;
+//		AccessibilityNodeInfo thisnode = node;
+//		if (thisnode == null) thisnode = AccessibilityNodeInfo.obtain();  // If node is null, try obtaining a new one
+//		if (thisnode != null) {
+//			Queue<AccessibilityNodeInfo> q = new LinkedList<AccessibilityNodeInfo>();
+//			do {
+//				for (int i=0; i<thisnode.getChildCount(); ++i) {
+//					AccessibilityNodeInfo n = thisnode.getChild(i);
+//					if (n != null) q.add(n); // Don't add if null!
+//				}
+//				if (!q.isEmpty()) {
+//					thisnode = q.poll();
+//					if (isActive(thisnode)) {
+//						has_active_descendants = true;
+//					}
+//				}
+//			} while(!q.isEmpty() && !has_active_descendants);
+//		}
+//		return has_active_descendants;
+//	}
+	
+	private void searchActiveNodesBFS(AccessibilityNodeInfo node) {
+		mActiveLeafs.clear();
+		mFocusedNode = null;
+		Queue<AccessibilityNodeInfo> q = new LinkedList<AccessibilityNodeInfo>();
+		q.add(node);
+		while (!q.isEmpty()) {
+			AccessibilityNodeInfo thisnode = q.poll();
+			if(thisnode == null) continue;
+			if(isActive(thisnode) && !thisnode.isScrollable()) {
+				mActiveLeafs.add(thisnode);
+				if(thisnode.isFocused())
+					mFocusedNode = thisnode;
+			}
+			for (int i=0; i<thisnode.getChildCount(); ++i) q.add(thisnode.getChild(i));
+		}
+		//removeActiveParents();
 	}
 	
 	public OverlayHUD getHUD() {
@@ -230,57 +436,9 @@ public class ServiceAccessibility extends AccessibilityService {
 	}
 	
 */
-	@Override
-	public void onAccessibilityEvent(AccessibilityEvent event) {
-		if (TeclaApp.getInstance().isSupportedIMERunning()) {
-			if (isFeedbackVisible()) {
-				int event_type = event.getEventType();
-				TeclaStatic.logD(CLASS_TAG, AccessibilityEvent.eventTypeToString(event_type) + ": " + event.getText());
-
-				AccessibilityNodeInfo node = event.getSource();
-				if (node != null) {
-					if (event_type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-						mPreviousOriginalNode = mOriginalNode;
-						mOriginalNode = node;				
-						mNodeIndex = 0;
-						searchAndUpdateNodes();
-					} else if (event_type == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
-						mPreviousOriginalNode = mOriginalNode;
-						mOriginalNode = node;				
-						mNodeIndex = 0;
-						searchAndUpdateNodes();
-						AccessibilityNodeInfo selectednode = findSelectedNode();
-						if(selectednode != null && selectednode.getParent().isScrollable()) {
-							mSelectedNode = selectednode;
-							mHighlighter.highlightNode(mSelectedNode);
-						}
-//						mVisualOverlay.checkAndUpdateHUDHeight();
-					} else if (event_type == AccessibilityEvent.TYPE_VIEW_FOCUSED) {
-						mSelectedNode = node;
-						mHighlighter.highlightNode(mSelectedNode);
-						if(mSelectedNode.getClassName().toString().contains(EDITTEXT_CLASSNAME))
-								TeclaApp.ime.showWindow(true);
-					} else if (event_type == AccessibilityEvent.TYPE_VIEW_SELECTED) {
-						//searchAndUpdateNodes();
-					} else if(event_type == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
-						mPreviousOriginalNode = mOriginalNode;
-						mOriginalNode = node;				
-						mNodeIndex = 0;
-						searchAndUpdateNodes();
-					} else if (event_type == AccessibilityEvent.TYPE_VIEW_CLICKED) {
-						//searchAndUpdateNodes();
-					}
-				} else {
-					mSelectedNode=sInstance.getRootInActiveWindow();
-					TeclaStatic.logD(CLASS_TAG, "Node is null!");
-				}
-			}
-		}
-	}
-
 	private AccessibilityNodeInfo findSelectedNode() {
 		AccessibilityNodeInfo result = null;
-		for (AccessibilityNodeInfo node: mActiveNodes) {
+		for (AccessibilityNodeInfo node: mActiveLeafs) {
 			if(node.isSelected()) {
 				if(result == null)
 					result = node;
@@ -302,44 +460,26 @@ public class ServiceAccessibility extends AccessibilityService {
 		//		TeclaHighlighter.clearHighlight();
 		searchActiveNodesBFS(mOriginalNode);
 		
-		if (mActiveNodes.size() > 0 ) {
+		if (mActiveLeafs.size() > 0 ) {
 			mSelectedNode = findNeighbourNode(mSelectedNode, DIRECTION_ANY);
-			if(mSelectedNode == null) mSelectedNode = mActiveNodes.get(0);
+			if(mSelectedNode == null) mSelectedNode = mActiveLeafs.get(0);
 			if(mFocusedNode != null) {
 				mSelectedNode = mFocusedNode;
 			}
-			mHighlighter.highlightNode(mSelectedNode);
+			mHighlighter.setNode(mSelectedNode);
 			if(mPreviousOriginalNode != null) 
 				mPreviousOriginalNode.recycle();
 		}
 	}
 
-	private void searchActiveNodesBFS(AccessibilityNodeInfo node) {
-		mActiveNodes.clear();
-		mFocusedNode = null;
-		Queue<AccessibilityNodeInfo> q = new LinkedList<AccessibilityNodeInfo>();
-		q.add(node);
-		while (!q.isEmpty()) {
-			AccessibilityNodeInfo thisnode = q.poll();
-			if(thisnode == null) continue;
-			if(isActive(thisnode) && !thisnode.isScrollable()) {
-				mActiveNodes.add(thisnode);
-				if(thisnode.isFocused())
-					mFocusedNode = thisnode;
-			}
-			for (int i=0; i<thisnode.getChildCount(); ++i) q.add(thisnode.getChild(i));
-		}
-		//removeActiveParents();
-	}
-	
 	private void removeActiveParents() {
 		ArrayList<Rect> node_rects = new ArrayList<Rect>();
 		AccessibilityNodeInfo node;
 		Rect rect;
 		int i;
-		for(i=0; i<mActiveNodes.size(); ++i) {
+		for(i=0; i<mActiveLeafs.size(); ++i) {
 			rect = new Rect();
-			node = mActiveNodes.get(i);
+			node = mActiveLeafs.get(i);
 			node.getBoundsInScreen(rect);
 			node_rects.add(rect);
 		}
@@ -353,7 +493,7 @@ public class ServiceAccessibility extends AccessibilityService {
 				rect2 = node_rects.get(j);
 				if(rect.contains(rect2)) {
 					node_rects.remove(i); 
-					mActiveNodes.remove(i);
+					mActiveLeafs.remove(i);
 					removedANode = true;
 					break;
 				}
@@ -362,34 +502,34 @@ public class ServiceAccessibility extends AccessibilityService {
 		}
 	}
 
-	private void sortAccessibilityNodes(ArrayList<AccessibilityNodeInfo> nodes) {
-		ArrayList<AccessibilityNodeInfo> sorted = new ArrayList<AccessibilityNodeInfo>();
-		Rect bounds_unsorted_node = new Rect();
-		Rect bounds_sorted_node = new Rect();
-		boolean inserted = false; 
-		for(AccessibilityNodeInfo node: nodes) {
-			if(sorted.size() == 0) sorted.add(node);
-			else {
-				node.getBoundsInScreen(bounds_unsorted_node);
-				inserted = false; 
-				for (int i=0; i<sorted.size() && !inserted; ++i) {
-					sorted.get(i).getBoundsInScreen(bounds_sorted_node);
-					if(bounds_sorted_node.centerY() > bounds_unsorted_node.centerY()) {
-						sorted.add(i, node);
-						inserted = true;
-					} else if (bounds_sorted_node.centerY() == bounds_unsorted_node.centerY()) {
-						if(bounds_sorted_node.centerX() > bounds_unsorted_node.centerX()) {
-							sorted.add(i, node);
-							inserted = true;
-						}
-					}
-				}
-				if(!inserted) sorted.add(node);
-			}
-		}
-		nodes.clear();
-		nodes = sorted; 
-	}
+//	private void sortAccessibilityNodes(ArrayList<AccessibilityNodeInfo> nodes) {
+//		ArrayList<AccessibilityNodeInfo> sorted = new ArrayList<AccessibilityNodeInfo>();
+//		Rect bounds_unsorted_node = new Rect();
+//		Rect bounds_sorted_node = new Rect();
+//		boolean inserted = false; 
+//		for(AccessibilityNodeInfo node: nodes) {
+//			if(sorted.size() == 0) sorted.add(node);
+//			else {
+//				node.getBoundsInScreen(bounds_unsorted_node);
+//				inserted = false; 
+//				for (int i=0; i<sorted.size() && !inserted; ++i) {
+//					sorted.get(i).getBoundsInScreen(bounds_sorted_node);
+//					if(bounds_sorted_node.centerY() > bounds_unsorted_node.centerY()) {
+//						sorted.add(i, node);
+//						inserted = true;
+//					} else if (bounds_sorted_node.centerY() == bounds_unsorted_node.centerY()) {
+//						if(bounds_sorted_node.centerX() > bounds_unsorted_node.centerX()) {
+//							sorted.add(i, node);
+//							inserted = true;
+//						}
+//					}
+//				}
+//				if(!inserted) sorted.add(node);
+//			}
+//		}
+//		nodes.clear();
+//		nodes = sorted; 
+//	}
 
 	public void selectNode(int direction ) {
 		selectNode(sInstance.mSelectedNode,  direction );
@@ -414,7 +554,7 @@ public class ServiceAccessibility extends AccessibilityService {
 		int dx, dy;
 		Rect outBounds = new Rect();
 		AccessibilityNodeInfo result = null; 
-		for (AccessibilityNodeInfo node: sInstance.mActiveNodes ) {
+		for (AccessibilityNodeInfo node: sInstance.mActiveLeafs ) {
 			if(refnode.equals(node) && direction != DIRECTION_ANY) continue; 
 			node.getBoundsInScreen(outBounds);
 			dx = x - outBounds.centerX();
@@ -456,8 +596,8 @@ public class ServiceAccessibility extends AccessibilityService {
 	}
 
 	public void clickActiveNode() {
-		if(sInstance.mActiveNodes.size() == 0) return;
-		if(sInstance.mSelectedNode == null) sInstance.mSelectedNode = sInstance.mActiveNodes.get(0);
+		if(sInstance.mActiveLeafs.size() == 0) return;
+		if(sInstance.mSelectedNode == null) sInstance.mSelectedNode = sInstance.mActiveLeafs.get(0);
 		
 		// Use to find out view type for custom actions
 		//Log.i("NODE TO STRING"," " + sInstance.mSelectedNode.toString());
@@ -519,7 +659,7 @@ public class ServiceAccessibility extends AccessibilityService {
 				ManagerAutoScan.stop();
 			} else {
 				String action_tecla = actions[0];
-				int max_node_index = mActiveNodes.size() - 1;
+				int max_node_index = mActiveLeafs.size() - 1;
 				switch(Integer.parseInt(action_tecla)) {
 
 				case SwitchEvent.ACTION_NEXT:
@@ -672,7 +812,7 @@ public class ServiceAccessibility extends AccessibilityService {
 				if (sInstance.mSelectedNode.toString().contains(MAP_VIEW)){
 					navigateWithDPad(direction);
 				}else{
-					mHighlighter.highlightNode(node);
+					mHighlighter.setNode(node);
 				if(node.isFocusable()) 
 					node.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
 				sInstance.mSelectedNode = node;
@@ -745,10 +885,6 @@ public class ServiceAccessibility extends AccessibilityService {
 //		return isSameNode(node, lastScrollNode);
 //	}
 	
-	private boolean isActive(AccessibilityNodeInfo node) {
-		return (node.isVisibleToUser() && node.isClickable())? true:false;
-	}
-
 	public static boolean isSameNode(AccessibilityNodeInfo node1, AccessibilityNodeInfo node2) {
 		if(node1 == null || node2 == null) return false;
 		Rect node1_rect = new Rect(); 
@@ -817,4 +953,65 @@ public class ServiceAccessibility extends AccessibilityService {
 		}
 	};
 
+	private boolean isActive(AccessibilityNodeInfo node) {
+		boolean is_active = false;
+		AccessibilityNodeInfo parent = node.getParent();
+		if (node.isVisibleToUser()
+				&& node.isClickable()
+				&& (isA11yFocusable(node))
+				//&& !(!isInputFocusable(node) && !(node.isScrollable() || parent.isScrollable()))
+				&& node.isEnabled())
+			is_active = true;
+		return is_active;
+	}
+	
+	private boolean isInputFocusable(AccessibilityNodeInfo node) {
+		return (node.getActions() & AccessibilityNodeInfo.ACTION_FOCUS) == AccessibilityNodeInfo.ACTION_FOCUS;
+	}
+	
+	private boolean isA11yFocusable(AccessibilityNodeInfo node) {
+		return (node.getActions() & AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS) == AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS;
+	}
+	
+	private Handler mDebugScanHandler;
+	private Runnable mDebugScanRunnable = new Runnable() {
+
+		@Override
+		public void run() {
+			mDebugScanHandler.removeCallbacks(mDebugScanRunnable);
+			if (mActiveLeafs.size() > 0) {
+				if (mLeafIndex >= mActiveLeafs.size()) {
+					mLeafIndex = 0;
+				}
+				mCurrentLeaf = mActiveLeafs.get(mLeafIndex);
+				mHighlighter.setNode(mCurrentLeaf);
+				showHighlighter();
+				mLeafIndex++;
+				//logProperties(mCurrentLeaf);
+			}
+			mDebugScanHandler.postDelayed(mDebugScanRunnable, DEBUG_SCAN_DELAY);
+		}
+		
+	};
+	
+	private void logProperties(AccessibilityNodeInfo node) {
+		AccessibilityNodeInfo parent = node.getParent();
+		TeclaStatic.logW(CLASS_TAG, "Node properties");
+		TeclaStatic.logW(CLASS_TAG, "isA11yFocusable? " + Boolean.toString(isA11yFocusable(node)));
+		TeclaStatic.logW(CLASS_TAG, "isInputFocusable? " + Boolean.toString(isInputFocusable(node)));
+		//TeclaStatic.logD(CLASS_TAG, "isVisible? " + Boolean.toString(node.isVisibleToUser()));
+		//TeclaStatic.logD(CLASS_TAG, "isClickable? " + Boolean.toString(node.isClickable()));
+		//TeclaStatic.logD(CLASS_TAG, "isEnabled? " + Boolean.toString(node.isEnabled()));
+		//TeclaStatic.logD(CLASS_TAG, "isScrollable? " + Boolean.toString(node.isScrollable()));
+		//TeclaStatic.logD(CLASS_TAG, "isSelected? " + Boolean.toString(node.isSelected()));
+		//TeclaStatic.logW(CLASS_TAG, "Parent properties");
+		//TeclaStatic.logW(CLASS_TAG, "isVisible? " + Boolean.toString(parent.isVisibleToUser()));
+		//TeclaStatic.logW(CLASS_TAG, "isClickable? " + Boolean.toString(parent.isClickable()));
+		//TeclaStatic.logW(CLASS_TAG, "isEnabled? " + Boolean.toString(parent.isEnabled()));
+		//TeclaStatic.logW(CLASS_TAG, "isA11yFocusable? " + Boolean.toString((parent.getActions() & AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS) == AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS));
+		//TeclaStatic.logW(CLASS_TAG, "isInputFocusable? " + Boolean.toString((parent.getActions() & AccessibilityNodeInfo.ACTION_FOCUS) == AccessibilityNodeInfo.ACTION_FOCUS));
+		//TeclaStatic.logW(CLASS_TAG, "isScrollable? " + Boolean.toString(parent.isScrollable()));
+		//TeclaStatic.logW(CLASS_TAG, "isSelected? " + Boolean.toString(parent.isSelected()));
+	}
+	
 }

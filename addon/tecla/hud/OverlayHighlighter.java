@@ -1,7 +1,7 @@
 package com.android.tecla.hud;
 
-import com.android.tecla.TeclaStatic;
 import com.android.tecla.utils.SimpleOverlay;
+import com.android.tecla.utils.TeclaStatic;
 
 import ca.idrc.tecla.R;
 import android.content.Context;
@@ -50,10 +50,10 @@ public class OverlayHighlighter extends SimpleOverlay {
 	
 
 	public void clearHighlight() {
-        mOuterBounds.clear();
         mInnerBounds.clear();
-        mOuterBounds.postInvalidate();
         mInnerBounds.postInvalidate();
+        mOuterBounds.clear();
+        mOuterBounds.postInvalidate();
 	}
 	
     public void removeInvalidNodes() {
@@ -65,7 +65,7 @@ public class OverlayHighlighter extends SimpleOverlay {
         mInnerBounds.postInvalidate();
     }
 
-    public void highlightNode(AccessibilityNodeInfo node) {
+    public void setNode(AccessibilityNodeInfo node) {
 
     	clearHighlight();
         if(node != null) {

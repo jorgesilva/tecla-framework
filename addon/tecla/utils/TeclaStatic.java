@@ -1,4 +1,4 @@
-package com.android.tecla;
+package com.android.tecla.utils;
 
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
