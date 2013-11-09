@@ -20,6 +20,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 
 import com.android.tecla.TeclaApp;
 import com.android.tecla.utils.SimpleOverlay;
+import com.android.tecla.utils.TeclaHUDButtonView;
 
 public class OverlayHUD extends SimpleOverlay {
 

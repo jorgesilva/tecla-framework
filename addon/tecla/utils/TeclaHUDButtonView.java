@@ -1,4 +1,4 @@
-package com.android.tecla.hud;
+package com.android.tecla.utils;
 
 import ca.idrc.tecla.R;
 import android.content.Context;

@@ -603,8 +603,9 @@ public class ServiceAccessibility extends AccessibilityService {
 		//Log.i("NODE TO STRING"," " + sInstance.mSelectedNode.toString());
 		
 		sInstance.mSelectedNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-		if(isFeedbackVisible()) 
-			mHighlighter.clearHighlight();
+		hideHighlighter();
+//		if(isFeedbackVisible()) 
+//			mHighlighter.clearHighlight();
 	}
 
 	//	public static void selectActiveNode(int index) {
@@ -955,10 +956,10 @@ public class ServiceAccessibility extends AccessibilityService {
 
 	private boolean isActive(AccessibilityNodeInfo node) {
 		boolean is_active = false;
-		AccessibilityNodeInfo parent = node.getParent();
+		//AccessibilityNodeInfo parent = node.getParent();
 		if (node.isVisibleToUser()
 				&& node.isClickable()
-				&& (isA11yFocusable(node))
+				&& (isA11yFocusable(node) || isInputFocusable(node))
 				//&& !(!isInputFocusable(node) && !(node.isScrollable() || parent.isScrollable()))
 				&& node.isEnabled())
 			is_active = true;
